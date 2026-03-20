@@ -1,0 +1,81 @@
+{
+  "colecciones": [
+    {
+      "nombre": "clientes",
+      "ejemplo": {
+        "cliente_id": "C123",
+        "nombre": "Juan Pérez",
+        "correo": "juan@example.com",
+        "telefono": "555-123-4567",
+        "direccion": {
+          "calle": "Av. Principal 123",
+          "ciudad": "Ciudad de México",
+          "estado": "CDMX",
+          "cp": "01234"
+        },
+        "fecha_registro": "2024-01-15T10:30:00Z",
+        "preferencias": ["fútbol", "correr"],
+        "metodos_pago": [
+          {
+            "tipo": "tarjeta",
+            "ultimos4": "1234"
+          }
+        ]
+      }
+    },
+    {
+      "nombre": "productos",
+      "ejemplo": {
+        "producto_id": "P567",
+        "nombre": "Tenis para correr",
+        "categoria": "Calzado",
+        "marca": "MarcaX",
+        "precio": 1299.99,
+        "stock": 50,
+        "tallas_disponibles": [24, 25, 26, 27],
+        "colores": ["negro", "azul"],
+        "caracteristicas": {
+          "material": "malla",
+          "genero": "unisex"
+        }
+      }
+    },
+    {
+      "nombre": "ventas",
+      "ejemplo": {
+        "venta_id": "V890",
+        "fecha": "2024-03-19T15:20:00Z",
+        "cliente_id": "C123",
+        "items": [
+          {
+            "producto_id": "P567",
+            "cantidad": 2,
+            "precio_unitario": 1299.99
+          }
+        ],
+        "total": 2599.98,
+        "metodo_pago": "tarjeta",
+        "estatus": "completada",
+        "canal": "web"
+      }
+    },
+    {
+      "nombre": "resenas",
+      "ejemplo": {
+        "review_id": "R001",
+        "cliente_id": "C123",
+        "producto_id": "P567",
+        "calificacion": 4.5,
+        "comentarios": "Excelente calidad y comodidad.",
+        "media": [
+          {
+            "media_id": "M001",
+            "tipo": "imagen",
+            "url": "/attachments/M001.jpg"
+          }
+        ],
+        "timestamp": "2026-02-28T11:30:50Z"
+      }
+    }
+  ]
+}
