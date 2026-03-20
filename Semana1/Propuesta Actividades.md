@@ -201,10 +201,22 @@ git push
 
 **Instrucciones:**
 1. Investiga 3 empresas que utilizan ciencia de datos (ej: Netflix, Amazon, Spotify)
+aws
+amazon
+google con youtube
 2. Para cada empresa, identifica:
    - Qué tipo de datos recopilan
+      - aws: en el servico de ec2 recopila los eventos de modificcion de configuracion, accesos por los puertos avilitados y las horas de uso para el cobro. tambien recopila datos de monitoreo del equipo virtualizad uso de recursos del hardware.
+      - amazon: registra las ventas del servicio que pagues o compres, tambien los cometarios
+      - youtube: recopila el historial de videos vistos
    - Qué técnicas de análisis utilizan
+      - aws: sreaming para los recursos y visuaizacion en graficas y dashboard, los datos de uso del ec2 es a traves de batches
+      - amazon utiiza batches que ba usando para modelar algoritmos y modelos predicivos
+      - youtube: entrena modelos predicivios persoanlizados para recomendacion de videos a cada usario en particular en su seccion de home y despues de ver un video....
    - Qué problemas resuelven con los datos
+      - aws: el cobro automatico del servicio. monitoreo de los recursos.
+      - amazon: impulsa ventas recomendads de productos propios o de afiliados aumentando la confiazna del cliente.
+      - Aumentan cantidad de retencion de tiempo de los usarios en la plataforma y fomentan el interes del mismo para utiilzar el sistema para informarse al tener contenido sugerido personalizado a sus gustos.
 3. Crea una presentación breve resumiendo tus hallazgos
 
 **Carpeta de entrega:** `Semana1/Actividades/Actividad1.2/`
