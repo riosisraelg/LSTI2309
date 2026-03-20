@@ -131,8 +131,45 @@ Expresar en notación científica:
 ### Ejercicio 4: Diagramas de Flujo
 Diseñar un algoritmo simple para:
 1. Determinar si un número es par o impar
+
+```mermaid
+flowchart TD
+    A([Inicio]) --> B[/Leer num/]
+    B --> C{num mod 2 == 0?}
+    C -- Sí --> D[/Imprimir 'Es par'/]
+    C -- No --> E[/Imprimir 'Es impar'/]
+    D --> F([Fin])
+    E --> F
+```
+
 2. Calcular el promedio de 3 números
+
+```mermaid
+flowchart TD
+    A([Inicio]) --> B[/Leer num1, num2, num3/]
+    B --> C["promedio = (num1 + num2 + num3) / 3"]
+    C --> D[/Imprimir promedio/]
+    D --> E([Fin])
+```
+
 3. Encontrar el mayor de 4 números
+
+```mermaid
+flowchart TD
+    A([Inicio]) --> B[/Leer A, B, C, D/]
+    B --> C{A > B?}
+    C -- Sí --> D[mayor = A]
+    C -- No --> E[mayor = B]
+    D --> F{mayor > C?}
+    E --> F
+    F -- No --> G[mayor = C]
+    F -- Sí --> H{mayor > D?}
+    G --> H
+    H -- No --> I[mayor = D]
+    H -- Sí --> J[/Imprimir mayor/]
+    I --> J
+    J --> K([Fin])
+```
 
 ### Ejercicio 5: Pseudocódigo
 Escribir pseudocódigo para:
@@ -175,8 +212,6 @@ Creado en 2010, este diagrama es uno de los marcos más famosos para definir qu�
 * **Habilidades de programación (Hacking Skills):** La capacidad de manipular archivos de texto, usar la línea de comandos y escribir código para recolectar y limpiar datos.
 * **Conocimientos de Matemáticas y Estadística:** La base necesaria para elegir los modelos adecuados y validar los resultados.
 * **Experiencia sustantiva (Substantive Expertise):** El conocimiento del dominio o negocio que permite formular las preguntas correctas y dar contexto a los hallazgos.
-
-
 
 > **Nota importante:** El diagrama también advierte sobre la "Zona de Peligro" (Danger Zone), que ocurre cuando alguien tiene habilidades de programación y conocimiento del tema, pero carece de base estadística, lo que puede llevar a conclusiones erróneas o análisis engañosos.
 
