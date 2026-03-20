@@ -72,34 +72,7 @@ print(f(10))  # 23
 La pendiente de la función $f(x) = 2x + 3$ es $m = 2$.
 La ordenada al origen es $b = 3$.
 
-import matplotlib.pyplot as plt
-import numpy as np
-
-# 1. Define the function
-def f(x):
-    return 2*x + 3
-
-# 2. Create data for the line (from x=-2 to x=12)
-x_line = np.linspace(-2, 12, 100)
-y_line = f(x_line)
-
-# 3. Define the specific points we calculated
-x_points = np.array([0, 1, 5, 10])
-y_points = f(x_points)
-
-# 4. Plotting
-plt.plot(x_line, y_line, label='f(x) = 2x + 3', color='blue', zorder=1)
-plt.scatter(x_points, y_points, color='red', label='Calculated Points', zorder=2)
-
-# Customizing the graph
-plt.axhline(0, color='black', linewidth=1) # X-axis
-plt.axvline(0, color='black', linewidth=1) # Y-axis
-plt.grid(True, linestyle='--', alpha=0.6)
-plt.legend()
-
-plt.show()
-
-```
+![Gráfica f(x) = 2x + 3](attachments/funcion_lineal_2x3.png)
 
 ### Ejercicio 3: Escalas y Volúmenes (Big Data)
 Expresar en notación científica:

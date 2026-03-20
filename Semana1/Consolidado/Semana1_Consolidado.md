@@ -79,6 +79,8 @@ print(f(10))  # 23
 - Pendiente: $m = 2$
 - Ordenada al origen: $b = 3$
 
+![Gráfica f(x) = 2x + 3](../attachments/funcion_lineal_2x3.png)
+
 ```python
 import matplotlib.pyplot as plt
 import numpy as np
