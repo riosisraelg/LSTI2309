@@ -15,49 +15,47 @@
 ### Ejercicio 1: Operaciones Algebraicas Básicas
 Resolver las siguientes operaciones:
 
-```
-a) 3x + 5 = 17      → x = ?
-b) 2y - 8 = 22      → y = ?
-c) 4z + 3 = 3z + 10 → z = ?
-d) 5(x + 2) = 35    → x = ?
+```latex
+a)\quad 3x + 5 = 17 \quad \Rightarrow \quad x = \,?
+b)\quad 2y - 8 = 22 \quad \Rightarrow \quad y = \,?
+c)\quad 4z + 3 = 3z + 10 \quad \Rightarrow \quad z = \,?
+d)\quad 5(x + 2) = 35 \quad \Rightarrow \quad x = \,?
 ```
 
 **Solución:**
-- a) x = 4
-- b) y = 15
-- c) z = 7
-- d) x = 5
+- a) $x = 4$
+- b) $y = 15$
+- c) $z = 7$
+- d) $x = 5$
 
 ```latex
-3x + 5 = 17 
+% --- a) ---
+3x + 5 = 17
 3x = 17 - 5
-x = 12/3 = 4
+x = \frac{12}{3} = 4
 
----
-
+% --- b) ---
 2y - 8 = 22
 2y = 22 + 8
 2y = 30
-y = 30/2 = 15
+y = \frac{30}{2} = 15
 
----
-
+% --- c) ---
 4z + 3 = 3z + 10
 4z = 10 - 3 + 3z
 4z - 3z = 10 - 3
 z = 7
 
----
-
+% --- d) ---
 5(x + 2) = 35
 5x + 10 = 35
 5x = 35 - 10
-x = 25/5 = 5
+x = \frac{25}{5} = 5
 ```
 ### Ejercicio 2: Funciones Lineales
-Dada la función f(x) = 2x + 3:
+Dada la función $f(x) = 2x + 3$:
 
-- Calcular f(0), f(1), f(5), f(10)
+- Calcular $f(0)$, $f(1)$, $f(5)$, $f(10)$
 - Graficar la función e identificar la pendiente y ordenada al origen
 
 ```python
@@ -65,17 +63,14 @@ def f(x):
     return 2*x + 3
 
 # Calcular f(0), f(1), f(5), f(10)
-print(f(0))
-print(f(1))
-print(f(5)) 
-print(f(10))
+print(f(0))   # 3
+print(f(1))   # 5
+print(f(5))   # 13
+print(f(10))  # 23
+```
 
----
-
-La pendiente de la funcion f(x) = 2x + 3 es 2.
-La ordenada al origen es 3.
-
----
+La pendiente de la función $f(x) = 2x + 3$ es $m = 2$.
+La ordenada al origen es $b = 3$.
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -111,18 +106,19 @@ Expresar en notación científica:
 
 | Cantidad                    | Notación Científica |
 | --------------------------- | ------------------- |
-| 1,000,000 bytes             |        1x10⁶ bytes |
-| 1,000,000,000 bytes         |        1x10⁹ bytes |
-| 1,000,000,000 registros     |        1x10⁹ registros |
-| 1,000,000,000,000 bytes     | 1x10¹² bytes  |
+| 1,000,000 bytes             | $1 \times 10^{6}$ bytes |
+| 1,000,000,000 bytes         | $1 \times 10^{9}$ bytes |
+| 1,000,000,000 registros     | $1 \times 10^{9}$ registros |
+| 1,000,000,000,000 bytes     | $1 \times 10^{12}$ bytes |
 
 **Referencias:**
-- 10³ = 1,000 (Kilo)
-- 10⁶ = 1,000,000 (Mega)
-- 10⁹ = 1,000,000,000 (Giga)
-- 10¹² = 1,000,000,000,000 (Tera)
-- 10¹⁵ = 1,000,000,000,000,000 (Peta)
-- 10¹⁸ = 1,000,000,000,000,000,000 (Exa)
+
+- $10^{3} = 1{,}000$ (Kilo)
+- $10^{6} = 1{,}000{,}000$ (Mega)
+- $10^{9} = 1{,}000{,}000{,}000$ (Giga)
+- $10^{12} = 1{,}000{,}000{,}000{,}000$ (Tera)
+- $10^{15} = 1{,}000{,}000{,}000{,}000{,}000$ (Peta)
+- $10^{18} = 1{,}000{,}000{,}000{,}000{,}000{,}000$ (Exa)
 
 ---
 
@@ -135,7 +131,7 @@ Diseñar un algoritmo simple para:
 ```mermaid
 flowchart TD
     A([Inicio]) --> B[/Leer num/]
-    B --> C{num mod 2 == 0?}
+    B --> C{$n \bmod 2 = 0$?}
     C -- Sí --> D[/Imprimir 'Es par'/]
     C -- No --> E[/Imprimir 'Es impar'/]
     D --> F([Fin])
@@ -147,7 +143,7 @@ flowchart TD
 ```mermaid
 flowchart TD
     A([Inicio]) --> B[/Leer num1, num2, num3/]
-    B --> C["promedio = (num1 + num2 + num3) / 3"]
+    B --> C["$\bar{x} = \frac{n_1 + n_2 + n_3}{3}$"]
     C --> D[/Imprimir promedio/]
     D --> E([Fin])
 ```
@@ -172,10 +168,32 @@ flowchart TD
 ```
 
 ### Ejercicio 5: Pseudocódigo
+
 Escribir pseudocódigo para:
-1. Calcular el factorial de un número
-2. Buscar un elemento en una lista
-3. Ordenar una lista de números
+
+#### 1. Calcular el factorial de un número
+
+```
+INICIO
+
+FIN
+```
+
+#### 2. Buscar un elemento en una lista
+
+```
+INICIO
+
+FIN
+```
+
+#### 3. Ordenar una lista de números
+
+```
+INICIO
+
+FIN
+```
 
 ### Ejercicio 6: Operaciones Booleanas
 Evaluar las siguientes expresiones:

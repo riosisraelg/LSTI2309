@@ -11,9 +11,5 @@
   - Seaborn
   - Scikit-learn
 
-## Verificación
 
-Script de verificación: `verificar_instalacion.py`
-Notebook de ejemplo: `ejemplo_carga_datos.ipynb`
-
-Ambos archivos se encuentran en la raíz del repositorio y confirman que el entorno está correctamente configurado.
+**Archivo generado**: Notebook de ejemplo: `ejemplo_carga_datos.ipynb`
