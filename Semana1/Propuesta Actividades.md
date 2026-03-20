@@ -262,11 +262,49 @@ git push
 
 **Instrucciones:**
 1. Investiga qué es Kaggle y cómo puedes usarlo
+plataforma gratuita que pose a disposición de los usuarios una serie de problemas para solucionar con temáticas como la ciencia de datos, el análisis predictivo y lo machine learning
 2. Explora al menos 3 datasets públicos en Kaggle
+YouTube Shorts: Engagement & Growth Velocity 📈
+Student Exam Performance Dataset Analysis
+Online Learning Engagement Dataset
 3. Identifica qué tipo de datos contiene cada uno
+YouTube Shorts: Engagement & Growth Velocity 📈
+string (char)
+Video_ID: The unique alphanumeric YouTube identifier.
+Title: The raw text of the video title.
+Channel_Name: The publishing creator.
+Video_URL: Direct link for visual verification of outliers.
+int
+Views: Total lifetime views.
+Likes: Total lifetime likes.
+Comments: Total lifetime comments.
+Age_In_Days: The exact number of days since the video was published.
+Description_Length: Total character count of the video description.
+float:
+Engagement_Rate_%: Engineered metric: (Likes + Comments) / Views * 100.
+Views_Per_Day: Engineered metric (Velocity): Views / Age_In_Days.
+Student Exam Performance Dataset Analysis
+Online Learning Engagement Dataset
+
+Student Exam Performance Dataset Analysis
+int
+string
+bool
+float
+
+Online Learning Engagement Dataset
+int
+string
+bool
+float
+
+
 4. Elige un dataset que te interese y describe:
    - Qué información contiene
+   youtube shorts: engagement & growth velocity
+   contiene metricas de visualizacion y metadata info of each video and two stats that describe the comportamiento de los viewers.
    - Qué preguntas podrías responder con esos datos
+   datos basicos de retencion de audencia, apreciacion del video por cada vista y que impacto le dejo a cada usario del video, esto permite saber si el video es publicitado a mas gente con gustos similares a los del usuario.
 
 **Carpeta de entrega:** `Semana1/Actividades/Actividad1.4/`
 
