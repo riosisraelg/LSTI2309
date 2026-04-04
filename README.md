@@ -16,7 +16,7 @@ Este repositorio contiene las actividades del curso de Ciencia de Datos.
 
 ## Estructura del Repositorio
 
-```
+```fileTree
 ├── Semana1/          # Fundamentos de Ciencia de Datos y Big Data (T1, T2)
 ├── Semana2/          # Arquitecturas y MongoDB (T3, T4, T5)
 ├── Semana3/          # Python y Análisis Exploratorio
