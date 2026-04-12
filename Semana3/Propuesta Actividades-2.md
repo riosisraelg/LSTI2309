@@ -76,6 +76,24 @@ git commit -m "Semana3: Actividad 3.1 - Refuerzo de Python"
 git push
 ```
 
+```python
+import pandas as pd
+
+lista = []
+diccionario = {}
+df = pd.DataFrame(lista)
+
+# Funciones lambda
+nuestroAmorJuntos = lambda suCorazonPorMi, miCorazonPorElla: suCorazonPorMi + miCorazonPorElla
+
+somosDosEnamorados = lambda funcion_amor: print(f"""Somos {funcion_amor(1, 1)}, dos enamorados
+De un amor dulce, libre y claro
+Al soñar vamos poco a poco
+Encerrando el mundo entre las manos""")
+
+somosDosEnamorados(nuestroAmorJuntos)
+```
+
 ---
 
 ### Actividad 3.2: Carga y Exploración de Datos
