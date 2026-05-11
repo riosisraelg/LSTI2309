@@ -1,5 +1,87 @@
+# Sistema operativo
 .DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# Python
 __pycache__/
-*.pyc
-.ipynb_checkpoints/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Entornos virtuales
 .env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Jupyter Notebook
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# IDEs
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+.spyderproject
+.spyproject
+.ropeproject
+.kiro
+
+# Datos y modelos (archivos grandes)
+*.csv
+*.xlsx
+*.xls
+*.zip
+*.tar.gz
+*.pkl
+*.pickle
+*.h5
+*.hdf5
+*.joblib
+*.model
+
+# Logs y bases de datos
+*.log
+*.sql
+*.sqlite
+*.db
+
+# Archivos de configuración local
+config.local.py
+secrets.py
+credentials.json
+
+# Caché y temporales
+.cache/
+.pytest_cache/
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.coverage
+htmlcov/
+*.cover
+.hypothesis/
