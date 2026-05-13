@@ -48,6 +48,7 @@ plt.style.use('seaborn-v0_8-darkgrid')
 sns.set_palette("husl")
 plt.rcParams['figure.figsize'] = (12, 6)
 plt.rcParams['font.size'] = 10
+plt.ioff()  # Desactivar modo interactivo para evitar que se abran ventanas
 
 # Mostrar todas las columnas en pandas
 pd.set_option('display.max_columns', None)
@@ -58,11 +59,14 @@ pd.set_option('display.width', None)
 # CONFIGURACIÓN DE CARPETAS PARA VISUALIZACIONES
 # ============================================
 
+# Directorio base del script (para usar rutas absolutas)
+DIRECTORIO_BASE = Path(__file__).parent.absolute()
+
 # Nombre del archivo (sin extensión) para organizar visualizaciones
 NOMBRE_PROYECTO = 'proyectoFinal'
 
 # Crear estructura de carpetas
-BASE_VIZ = Path('Visualizaciones')
+BASE_VIZ = DIRECTORIO_BASE / 'Visualizaciones'
 CARPETA_VIZ = BASE_VIZ / NOMBRE_PROYECTO
 CARPETA_VIZ.mkdir(parents=True, exist_ok=True)
 
@@ -75,7 +79,7 @@ def guardar_grafico(nombre_archivo, dpi=300):
 print("✅ Librerías importadas exitosamente")
 print(f"📊 Pandas version: {pd.__version__}")
 print(f"🔢 NumPy version: {np.__version__}")
-print(f"\n📁 Carpeta de visualizaciones: {CARPETA_VIZ}")
+print(f"\n📁 Carpeta de visualizaciones: {CARPETA_VIZ.absolute()}")
 
 # ============================================
 # 1.1 CARGA DE DATOS
@@ -86,7 +90,11 @@ print("📂 CARGANDO DATOS")
 print("="*70)
 
 # Cargar dataset
-df = pd.read_csv('Datos/train.csv')
+ruta_datos = DIRECTORIO_BASE / 'Datos' / 'train.csv'
+df = pd.read_csv(ruta_datos)
+
+# Crear copia para limpieza (df_limpio se irá modificando, df permanece original)
+df_limpio = df.copy()
 
 print(f"\n✅ Datos cargados exitosamente")
 print(f"   Dimensiones: {df.shape[0]} filas × {df.shape[1]} columnas")
@@ -102,7 +110,7 @@ print("="*70)
 
 # Primeras filas
 print("\n📋 Primeras 5 filas del dataset:")
-display(df.head())
+print(df.head())
 
 # Información general
 print("\n📊 Información general del dataset:")
@@ -127,7 +135,7 @@ info_columnas = pd.DataFrame({
 })
 
 print("\n📋 Resumen de todas las columnas:")
-display(info_columnas)
+print(info_columnas)
 
 # Estadísticas por tipo
 print("\n📊 Distribución de tipos de datos:")
@@ -151,7 +159,7 @@ for i, col in enumerate(columnas_numericas, 1):
 
 # Estadísticas descriptivas
 print("\n📊 Estadísticas descriptivas de variables numéricas:")
-display(df[columnas_numericas].describe().T)
+print(df[columnas_numericas].describe().T)
 
 # ============================================
 # 1.5 IDENTIFICACIÓN DE VARIABLES CATEGÓRICAS
@@ -209,7 +217,7 @@ missing_df = missing_df[missing_df['Valores_Faltantes'] > 0].sort_values(
 
 if len(missing_df) > 0:
     print(f"\n⚠️  Columnas con valores faltantes: {len(missing_df)}")
-    display(missing_df)
+    print(missing_df)
     
     # Visualización
     plt.figure(figsize=(12, 6))
@@ -219,7 +227,7 @@ if len(missing_df) > 0:
     plt.grid(True, alpha=0.3, axis='x')
     plt.tight_layout()
     guardar_grafico('01_valores_faltantes.png')
-    plt.show()
+    plt.close()
 else:
     print("\n✅ No hay valores faltantes en el dataset")
 
@@ -231,15 +239,23 @@ print("="*70)
 print("🔧 IMPUTACIÓN DE VALORES FALTANTES")
 print("="*70)
 
-for col in columnas_imputar_numericas:
-    if col in df_limpio_limpio.columns:
-        mediana = df_limpio_limpio[col].median()
-        # Asignación directa en lugar de inplace=True
-        df_limpio_limpio[col] = df_limpio_limpio[col].fillna(mediana)
+# Definir columnas a imputar
+columnas_imputar_numericas = ['bathrooms', 'bedrooms', 'beds']
 
-# Validar nuevamente
-print(df_limpio_limpio[columnas_imputar_numericas].isnull().sum())
-df_limpio = df_limpio_limpio.copy() 
+print(f"\n📋 Columnas a imputar con mediana:")
+for col in columnas_imputar_numericas:
+    if col in df_limpio.columns:
+        nulos_antes = df_limpio[col].isnull().sum()
+        if nulos_antes > 0:
+            mediana = df_limpio[col].median()
+            df_limpio[col] = df_limpio[col].fillna(mediana)
+            print(f"   • {col}: {nulos_antes} valores imputados con mediana = {mediana}")
+        else:
+            print(f"   • {col}: Sin valores faltantes")
+
+# Validar
+print(f"\n✅ Validación post-imputación:")
+print(df_limpio[columnas_imputar_numericas].isnull().sum()) 
 
 # ============================================
 # 1.8 ELIMINACIÓN DE COLUMNAS IRRELEVANTES
@@ -257,14 +273,14 @@ columnas_eliminar = [
     'host_identity_verified',
     'host_response_rate',
     'host_since',
-    'instant_bookable',
     'last_review',
     'name',
-    'neighbourhood',
     'thumbnail_url',
-    'zipcode',
-    'cancellation_policy',
-    'description'
+    'description',
+    'number_of_reviews',  # Eliminada por baja correlación con log_price
+    'review_scores_rating', # Eliminada de las variables candidatas
+    'latitude',           # Geográfica, ruido numérico (se usa neighbourhood)
+    'longitude'           # Geográfica, ruido numérico (se usa neighbourhood)
 ]
 
 # Verificar cuáles existen en el dataset
@@ -280,6 +296,46 @@ else:
     print("✅ No hay columnas para eliminar")
 
 print(f"\n📊 Dimensiones después de eliminación: {df_limpio.shape}")
+
+# ============================================
+# 1.8.1 PROCESAMIENTO DE AMENITIES Y CLEANING FEE
+# ============================================
+
+print("="*70)
+print("🔧 PROCESAMIENTO DE AMENITIES Y CLEANING_FEE")
+print("="*70)
+
+# Procesar amenities a conteo numérico
+if 'amenities' in df_limpio.columns:
+    print("\n🔄 Transformando 'amenities' a 'amenities_count'...")
+    # Contar número de elementos separados por coma
+    df_limpio['amenities_count'] = df_limpio['amenities'].apply(lambda x: len(str(x).split(',')) if pd.notnull(x) else 0)
+    df_limpio = df_limpio.drop('amenities', axis=1)
+    print("✅ 'amenities' transformada a 'amenities_count' y columna original eliminada.")
+
+# Procesar cleaning_fee a numérico
+if 'cleaning_fee' in df_limpio.columns:
+    print("\n🔄 Procesando 'cleaning_fee'...")
+    if df_limpio['cleaning_fee'].dtype == 'bool':
+        df_limpio['cleaning_fee'] = df_limpio['cleaning_fee'].astype(int)
+    elif df_limpio['cleaning_fee'].dtype == 'O':
+        temp_fee = df_limpio['cleaning_fee'].astype(str).str.lower()
+        if temp_fee.isin(['true', 'false', 't', 'f']).any():
+            df_limpio['cleaning_fee'] = temp_fee.map({'true': 1, 'false': 0, 't': 1, 'f': 0}).fillna(0)
+        else:
+            df_limpio['cleaning_fee'] = df_limpio['cleaning_fee'].astype(str).str.replace(r'[^\d.]', '', regex=True)
+            df_limpio['cleaning_fee'] = pd.to_numeric(df_limpio['cleaning_fee'], errors='coerce')
+    
+    df_limpio['cleaning_fee'] = df_limpio['cleaning_fee'].fillna(0).astype(float)
+    print("✅ 'cleaning_fee' procesada exitosamente.")
+
+# Procesar instant_bookable a numérico (binario)
+if 'instant_bookable' in df_limpio.columns:
+    print("\n🔄 Transformando 'instant_bookable' a binario...")
+    df_limpio['instant_bookable'] = df_limpio['instant_bookable'].map({'t': 1, 'f': 0, 'True': 1, 'False': 0}).fillna(0).astype(int)
+    print("✅ 'instant_bookable' procesada exitosamente.")
+
+print(f"\n📊 Dimensiones después del procesamiento: {df_limpio.shape}")
 
 # ============================================
 # 1.9 DETECCIÓN DE OUTLIERS
@@ -303,7 +359,7 @@ def detectar_outliers_iqr(data, columna, factor=1.5):
     return len(outliers), limite_inferior, limite_superior
 
 # Analizar outliers en variables numéricas clave
-variables_analizar = ['log_price', 'accommodates', 'bedrooms', 'beds', 'bathrooms']
+variables_analizar = ['log_price', 'accommodates', 'bedrooms', 'beds', 'bathrooms', 'amenities_count', 'cleaning_fee']
 variables_analizar = [col for col in variables_analizar if col in df_limpio.columns]
 
 outliers_info = []
@@ -319,10 +375,10 @@ for col in variables_analizar:
 
 outliers_df = pd.DataFrame(outliers_info)
 print("\n📊 Resumen de outliers:")
-display(outliers_df)
+print(outliers_df)
 
 # Visualización de boxplots
-fig, axes = plt.subplots(2, 3, figsize=(15, 10))
+fig, axes = plt.subplots(2, 4, figsize=(16, 10))
 axes = axes.flatten()
 
 for i, col in enumerate(variables_analizar):
@@ -338,12 +394,12 @@ for i in range(len(variables_analizar), len(axes)):
 
 plt.tight_layout()
 guardar_grafico('02_outliers_boxplots.png')
-plt.show()
+plt.close()
 
 print("\n✅ Análisis de outliers completado")
 print("💡 Nota: Los outliers se mantienen por ahora para análisis posterior")
 
-# ====================================================================
+
 # ============================================
 # 1.9.1 ELIMINACIÓN DE OUTLIERS
 # ============================================
@@ -456,7 +512,7 @@ plt.xticks(rotation=45, ha='right')
 plt.yticks(rotation=0)
 plt.tight_layout()
 guardar_grafico('03_mapa_calor_completo.png')
-plt.show()
+plt.close()
 
 # Análisis de correlaciones con log_price
 if 'log_price' in df_numerico.columns:
@@ -484,7 +540,7 @@ if 'log_price' in df_numerico.columns:
     plt.grid(True, alpha=0.3, axis='x')
     plt.tight_layout()
     guardar_grafico('04_correlaciones_log_price.png')
-    plt.show()
+    plt.close()
 
 # Identificar pares de variables altamente correlacionadas
 print("\n⚠️  Pares de variables con alta correlación (|r| > 0.8):")
@@ -589,7 +645,7 @@ if len(vars_para_vif) > 0:
     # Mostrar resultados
     print("\n📋 Resultados del análisis VIF:")
     print("="*70)
-    display(vif_data)
+    print(vif_data)
     
     # Resumen por categoría
     print("\n📊 Resumen:")
@@ -636,7 +692,7 @@ if len(vars_para_vif) > 0:
     plt.grid(True, alpha=0.3, axis='x')
     plt.tight_layout()
     guardar_grafico('05_analisis_vif.png')
-    plt.show()
+    plt.close()
     
     # Análisis de pares correlacionados
     print("\n📊 Análisis de pares de variables altamente correlacionadas:")
@@ -665,7 +721,7 @@ if len(vars_para_vif) > 0:
         df_pares = df_pares.drop('Abs', axis=1)
         
         print(f"\n⚠️  Encontrados {len(df_pares)} pares con |correlación| > 0.7:")
-        display(df_pares)
+        print(df_pares)
         
         print("\n💡 Interpretación:")
         print("   Estos pares de variables están altamente correlacionados.")
@@ -682,7 +738,7 @@ else:
 # ============================================
 # 3.2 MATRIZ DE CORRELACIÓN - acciones 
 # ============================================
-# ====================================================================
+
 # ============================================
 # 3.2 ELIMINACIÓN DE VARIABLES CON MULTICOLINEALIDAD CRÍTICA
 # ============================================
@@ -704,17 +760,8 @@ print("      • Redundancia estructural con accommodates")
 print("      • VIF en nivel crítico (>10)")
 print("      • accommodates tiene mayor correlación con log_price (0.52)")
 
-# Variable 2: review_scores_rating
-print("\n2️⃣  VARIABLE: review_scores_rating")
-print("   ❌ DECISIÓN: ELIMINAR")
-print("   📊 VIF: 11.27 (crítico)")
-print("   💡 Justificación:")
-print("      • VIF excede severamente el límite de viabilidad (>10)")
-print("      • Produce inestabilidad matemática en coeficientes")
-print("      • Compromete la interpretabilidad del modelo")
-
-# Variable 3: accommodates
-print("\n3️⃣  VARIABLE: accommodates")
+# Variable 2: accommodates
+print("\n2️⃣  VARIABLE: accommodates")
 print("   ✅ DECISIÓN: RETENER")
 print("   📊 Correlación con log_price: 0.52 (la más alta)")
 print("   💡 Justificación:")
@@ -728,7 +775,7 @@ print(f"   Filas: {df_limpio.shape[0]:,}")
 print(f"   Columnas: {df_limpio.shape[1]}")
 
 # Eliminar variables con multicolinealidad crítica
-variables_eliminar_vif = ['beds', 'review_scores_rating']
+variables_eliminar_vif = ['beds']
 variables_existentes = [col for col in variables_eliminar_vif if col in df_limpio.columns]
 
 if variables_existentes:
@@ -746,7 +793,7 @@ print(f"\n📊 Dimensiones después de eliminación:")
 print(f"   Filas: {df_limpio.shape[0]:,}")
 print(f"   Columnas: {df_limpio.shape[1]}")
 
-# ====================================================================
+
 # ============================================
 # 3.3 RECÁLCULO DE VIF - SEGUNDA ITERACIÓN
 # ============================================
@@ -795,7 +842,7 @@ if len(vars_numericas_remanentes) >= 2:
     # Mostrar resultados
     print("\n📋 RESULTADOS - VIF SEGUNDA ITERACIÓN:")
     print("="*70)
-    display(vif_data_v2)
+    print(vif_data_v2)
     
     # Análisis de resultados
     funcional = len(vif_data_v2[vif_data_v2['VIF'] < 5])
@@ -828,7 +875,7 @@ if len(vars_numericas_remanentes) >= 2:
     ax1.axvline(x=10, color='red', linestyle='--', linewidth=2, label='VIF = 10')
     ax1.set_xlabel('VIF', fontsize=12)
     ax1.set_ylabel('Variables', fontsize=12)
-    ax1.set_title('VIF - Segunda Iteración\n(Después de eliminar beds y review_scores_rating)', 
+    ax1.set_title('VIF - Segunda Iteración\n(Después de eliminar beds)', 
                   fontsize=12, pad=15)
     ax1.legend()
     ax1.grid(True, alpha=0.3, axis='x')
@@ -869,14 +916,14 @@ if len(vars_numericas_remanentes) >= 2:
     
     plt.tight_layout()
     guardar_grafico('06_vif_segunda_iteracion.png')
-    plt.show()
+    plt.close()
     
     print("\n✅ Recálculo de VIF completado")
     
 else:
     print("\n⚠️  No hay suficientes variables numéricas para calcular VIF")
 
-# ====================================================================
+
 # ============================================
 # 3.4 PREPARACIÓN DE VARIABLES CATEGÓRICAS
 # ============================================
@@ -890,70 +937,102 @@ print("   Incorporar variables categóricas de alta relevancia mediante")
 print("   transformación a variables ficticias (dummy variables) para")
 print("   compensar la pérdida de predictores numéricos")
 
-# Identificar variable categórica principal
-variable_categorica_principal = 'room_type'
+# Identificar variables categóricas principales
+variables_categoricas_modelo = ['room_type', 'neighbourhood', 'property_type', 'bed_type', 'city', 'cancellation_policy']
 
-if variable_categorica_principal in df_limpio.columns:
-    print(f"\n📊 VARIABLE CATEGÓRICA SELECCIONADA: {variable_categorica_principal}")
-    
-    # Análisis de la variable
-    print(f"\n📋 Análisis de {variable_categorica_principal}:")
-    print(f"   Valores únicos: {df_limpio[variable_categorica_principal].nunique()}")
-    print(f"   Valores nulos: {df_limpio[variable_categorica_principal].isnull().sum()}")
-    
-    print(f"\n📊 Distribución de valores:")
-    distribucion = df_limpio[variable_categorica_principal].value_counts()
-    for categoria, count in distribucion.items():
-        porcentaje = (count / len(df_limpio)) * 100
-        print(f"   • {categoria}: {count:,} ({porcentaje:.2f}%)")
-    
-    # Análisis de relación con log_price
-    print(f"\n📈 Relación con log_price:")
-    precio_por_categoria = df_limpio.groupby(variable_categorica_principal)['log_price'].agg([
-        ('Media', 'mean'),
-        ('Mediana', 'median'),
-        ('Desv_Est', 'std'),
-        ('Count', 'count')
-    ]).round(2)
-    display(precio_por_categoria)
-    
-    # Crear variables dummy
-    print(f"\n🔄 Creando variables dummy para {variable_categorica_principal}...")
-    df_limpio = pd.get_dummies(df_limpio, columns=[variable_categorica_principal], 
-                                drop_first=True, dtype=int)
-    
-    # Identificar nuevas columnas creadas
-    nuevas_columnas = [col for col in df_limpio.columns if col.startswith(f'{variable_categorica_principal}_')]
-    
-    print(f"\n✅ Variables dummy creadas: {len(nuevas_columnas)}")
-    for i, col in enumerate(nuevas_columnas, 1):
-        print(f"   {i}. {col}")
-    
-    # Visualización
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 6))
-    
-    # Gráfico 1: Distribución de categorías
-    distribucion.plot(kind='barh', ax=ax1, color='steelblue', alpha=0.7)
-    ax1.set_xlabel('Frecuencia', fontsize=12)
-    ax1.set_ylabel('Categoría', fontsize=12)
-    ax1.set_title(f'Distribución de {variable_categorica_principal}', fontsize=12, pad=15)
-    ax1.grid(True, alpha=0.3, axis='x')
-    
-    # Gráfico 2: Precio promedio por categoría
-    precio_por_categoria['Media'].plot(kind='barh', ax=ax2, color='coral', alpha=0.7)
-    ax2.set_xlabel('log_price (Media)', fontsize=12)
-    ax2.set_ylabel('Categoría', fontsize=12)
-    ax2.set_title(f'Precio Promedio por {variable_categorica_principal}', fontsize=12, pad=15)
-    ax2.grid(True, alpha=0.3, axis='x')
-    
-    plt.tight_layout()
-    guardar_grafico('07_analisis_room_type.png')
-    plt.show()
-    
-    print(f"\n✅ Transformación de variables categóricas completada")
-    
-else:
-    print(f"\n⚠️  La variable {variable_categorica_principal} no existe en el dataset")
+for variable_categorica_principal in variables_categoricas_modelo:
+    if variable_categorica_principal in df_limpio.columns:
+        print(f"\n{'='*70}")
+        print(f"📊 VARIABLE CATEGÓRICA: {variable_categorica_principal}")
+        print(f"{'='*70}")
+        
+        # Análisis de la variable
+        print(f"\n📋 Análisis de {variable_categorica_principal}:")
+        print(f"   Valores únicos: {df_limpio[variable_categorica_principal].nunique()}")
+        
+        # Manejar valores nulos
+        nulos = df_limpio[variable_categorica_principal].isnull().sum()
+        print(f"   Valores nulos: {nulos}")
+        
+        if nulos > 0:
+            print(f"   ⚠️  Imputando valores nulos con 'Unknown'")
+            df_limpio[variable_categorica_principal] = df_limpio[variable_categorica_principal].fillna('Unknown')
+        
+        print(f"\n📊 Distribución de valores:")
+        distribucion = df_limpio[variable_categorica_principal].value_counts()
+        
+        # Mostrar top 10 para variables con muchas categorías
+        if len(distribucion) > 10:
+            print(f"   Top 10 categorías más frecuentes:")
+            for i, (categoria, count) in enumerate(distribucion.head(10).items(), 1):
+                porcentaje = (count / len(df_limpio)) * 100
+                print(f"   {i:2d}. {categoria}: {count:,} ({porcentaje:.2f}%)")
+            print(f"   ... y {len(distribucion) - 10} categorías más")
+        else:
+            for categoria, count in distribucion.items():
+                porcentaje = (count / len(df_limpio)) * 100
+                print(f"   • {categoria}: {count:,} ({porcentaje:.2f}%)")
+        
+        # Análisis de relación con log_price
+        print(f"\n📈 Relación con log_price (Top 10):")
+        precio_por_categoria = df_limpio.groupby(variable_categorica_principal)['log_price'].agg([
+            ('Media', 'mean'),
+            ('Mediana', 'median'),
+            ('Desv_Est', 'std'),
+            ('Count', 'count')
+        ]).round(2).sort_values('Media', ascending=False)
+        
+        print(precio_por_categoria.head(10))
+        
+        # Crear variables dummy
+        print(f"\n🔄 Creando variables dummy para {variable_categorica_principal}...")
+        df_limpio = pd.get_dummies(df_limpio, columns=[variable_categorica_principal], 
+                                    drop_first=True, dtype=int)
+        
+        # Identificar nuevas columnas creadas
+        nuevas_columnas = [col for col in df_limpio.columns if col.startswith(f'{variable_categorica_principal}_')]
+        
+        print(f"✅ Variables dummy creadas: {len(nuevas_columnas)}")
+        if len(nuevas_columnas) <= 20:
+            for i, col in enumerate(nuevas_columnas, 1):
+                print(f"   {i}. {col}")
+        else:
+            print(f"   (Mostrando primeras 10 de {len(nuevas_columnas)})")
+            for i, col in enumerate(nuevas_columnas[:10], 1):
+                print(f"   {i}. {col}")
+            print(f"   ... y {len(nuevas_columnas) - 10} más")
+        
+        # Visualización para room_type, property_type y bed_type
+        if variable_categorica_principal in ['room_type', 'property_type', 'bed_type']:
+            fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 6))
+            
+            # Limitar a top 15 categorías para mejor visualización
+            top_cats = distribucion.head(15).index
+            dist_plot = distribucion.loc[top_cats].sort_values(ascending=True)
+            precio_plot = precio_por_categoria.loc[top_cats, 'Media'].sort_values(ascending=True)
+            
+            # Gráfico 1: Distribución de categorías
+            dist_plot.plot(kind='barh', ax=ax1, color='steelblue', alpha=0.7)
+            ax1.set_xlabel('Frecuencia', fontsize=12)
+            ax1.set_ylabel('Categoría', fontsize=12)
+            ax1.set_title(f'Distribución de {variable_categorica_principal} (Top 15)', fontsize=12, pad=15)
+            ax1.grid(True, alpha=0.3, axis='x')
+            
+            # Gráfico 2: Precio promedio por categoría
+            precio_plot.plot(kind='barh', ax=ax2, color='coral', alpha=0.7)
+            ax2.set_xlabel('log_price (Media)', fontsize=12)
+            ax2.set_ylabel('Categoría', fontsize=12)
+            ax2.set_title(f'Precio Promedio por {variable_categorica_principal} (Top 15)', fontsize=12, pad=15)
+            ax2.grid(True, alpha=0.3, axis='x')
+            
+            plt.tight_layout()
+            guardar_grafico(f'07_analisis_{variable_categorica_principal}.png')
+            plt.close()
+        
+        print(f"\n✅ Transformación de {variable_categorica_principal} completada")
+        
+    else:
+        print(f"\n⚠️  La variable {variable_categorica_principal} no existe en el dataset")
 
 # Resumen final
 print("\n" + "="*70)
@@ -965,13 +1044,28 @@ print(f"   Filas: {df_limpio.shape[0]:,}")
 print(f"   Columnas: {df_limpio.shape[1]}")
 
 print(f"\n🔢 Variables numéricas: {len(df_limpio.select_dtypes(include=[np.number]).columns)}")
-print(f"📝 Variables categóricas originales eliminadas: 1 ({variable_categorica_principal})")
-print(f"🏷️  Variables dummy creadas: {len(nuevas_columnas) if 'nuevas_columnas' in locals() else 0}")
+
+# Contar variables dummy por tipo
+room_type_dummies = [col for col in df_limpio.columns if col.startswith('room_type_')]
+neighbourhood_dummies = [col for col in df_limpio.columns if col.startswith('neighbourhood_')]
+property_type_dummies = [col for col in df_limpio.columns if col.startswith('property_type_')]
+bed_type_dummies = [col for col in df_limpio.columns if col.startswith('bed_type_')]
+city_dummies = [col for col in df_limpio.columns if col.startswith('city_')]
+cancellation_policy_dummies = [col for col in df_limpio.columns if col.startswith('cancellation_policy_')]
+
+print(f"🏷️  Variables dummy creadas:")
+print(f"   • room_type: {len(room_type_dummies)}")
+print(f"   • neighbourhood: {len(neighbourhood_dummies)}")
+print(f"   • property_type: {len(property_type_dummies)}")
+print(f"   • bed_type: {len(bed_type_dummies)}")
+print(f"   • city: {len(city_dummies)}")
+print(f"   • cancellation_policy: {len(cancellation_policy_dummies)}")
+print(f"   • Total: {len(room_type_dummies) + len(neighbourhood_dummies) + len(property_type_dummies) + len(bed_type_dummies) + len(city_dummies) + len(cancellation_policy_dummies)}")
 
 print("\n✅ Preparación de datos para modelado completada")
 
 
-# ====================================================================
+
 # ============================================
 # 4. ANÁLISIS DE CORRELACIÓN - PAIRPLOT
 # ============================================
@@ -990,7 +1084,7 @@ print("   ✅ Transparencia (alpha): Maneja overplotting en datasets grandes")
 
 # Seleccionar variables numéricas para el pairplot
 # Excluir variables dummy (que empiezan con 'room_type_', 'property_type_', etc.)
-variables_pairplot = ['log_price', 'accommodates', 'bathrooms', 'bedrooms', 'number_of_reviews']
+variables_pairplot = ['log_price', 'accommodates', 'bathrooms', 'bedrooms', 'amenities_count', 'cleaning_fee']
 
 # Verificar que todas las variables existen
 variables_disponibles = [var for var in variables_pairplot if var in df_limpio.columns]
@@ -1018,7 +1112,7 @@ if len(variables_disponibles) >= 2:
     
     # Estadísticas descriptivas del subset
     print(f"\n📊 Estadísticas descriptivas:")
-    display(df_pairplot.describe().T)
+    print(df_pairplot.describe().T)
     
     # Generar Pairplot
     print(f"\n🎨 Generando Pairplot...")
@@ -1056,7 +1150,7 @@ if len(variables_disponibles) >= 2:
     
     plt.tight_layout()
     guardar_grafico('08_pairplot_correlaciones.png', dpi=300)
-    plt.show()
+    plt.close()
     
     print(f"\n✅ Pairplot generado exitosamente")
     
@@ -1070,7 +1164,7 @@ if len(variables_disponibles) >= 2:
     
     # Mostrar matriz completa
     print("\n📋 Matriz de correlación completa:")
-    display(correlacion_matriz.round(3))
+    print(correlacion_matriz.round(3))
     
     # Visualización de la matriz de correlación
     plt.figure(figsize=(10, 8))
@@ -1098,7 +1192,7 @@ if len(variables_disponibles) >= 2:
     plt.yticks(rotation=0)
     plt.tight_layout()
     guardar_grafico('09_matriz_correlacion_corner.png')
-    plt.show()
+    plt.close()
     
     # Análisis detallado de correlaciones con log_price
     print("\n" + "="*70)
@@ -1148,7 +1242,7 @@ if len(variables_disponibles) >= 2:
     
     plt.tight_layout()
     guardar_grafico('10_correlaciones_log_price_barras.png')
-    plt.show()
+    plt.close()
     
     # Interpretación y recomendaciones
     print("\n" + "="*70)
@@ -1200,7 +1294,7 @@ if len(variables_disponibles) >= 2:
                                                               key=abs, 
                                                               ascending=False)
         print(f"\n⚠️  Pares de predictores con correlación |r| > 0.5:")
-        display(df_pares)
+        print(df_pares)
         print("\n   💡 Alta correlación entre predictores puede causar multicolinealidad")
         print("      Considerar eliminar una variable de cada par en el modelo final")
     else:
@@ -1212,7 +1306,7 @@ else:
     print(f"\n❌ Error: Se necesitan al menos 2 variables para generar el pairplot")
     print(f"   Variables disponibles: {len(variables_disponibles)}")
 
-# ====================================================================
+
 # ============================================
 # 4.1 SELECCIÓN FINAL DE VARIABLES PARA EL MODELO
 # ============================================
@@ -1246,24 +1340,81 @@ print("   ❌ DECISIÓN: EXCLUIR")
 print("   📊 Correlación con log_price: 0.1478")
 print("   💡 Justificación: Baja significancia lineal (<0.2)")
 
-print("\n4️⃣  VARIABLE: number_of_reviews")
-print("   ❌ DECISIÓN: EXCLUIR")
-print("   📊 Correlación con log_price: -0.0057")
-print("   💡 Justificación: Correlación prácticamente nula")
+print("\n4️⃣  VARIABLES ELIMINADAS PREVIAMENTE:")
+print("   ❌ number_of_reviews, review_scores_rating: Eliminadas de candidatas")
+print("   ❌ latitude, longitude: Ruido geográfico (se usarán factores de ubicación preprocesados)")
 
-print("\n5️⃣  VARIABLES: room_type (dummy variables)")
+print("\n5️⃣  NUEVAS VARIABLES: property_type, amenities_count, cleaning_fee")
+print("   ✅ DECISIÓN: INCLUIR")
+print("   💡 Justificación: Poseen información valiosa sobre el inmueble y recargos.")
+
+print("\n6️⃣  VARIABLES: room_type, neighbourhood, property_type, bed_type (dummy variables)")
 print("   ✅ DECISIÓN: INCLUIR")
 print("   💡 Justificación: Variables categóricas de alta relevancia")
+print("      • room_type: Tipo de alojamiento (impacto directo en precio)")
+print("      • neighbourhood: Ubicación geográfica (factor clave en precios)")
+print("      • property_type: Tipo de propiedad (casa, departamento, etc.)")
+print("      • bed_type: Tipo de cama (Real bed, Futon, etc.)")
 
-# Identificar variables dummy de room_type
+print("\n7️⃣  NUEVAS VARIABLES (EVALUACIÓN): instant_bookable, cancellation_policy, city, zipcode")
+print("   ✅ DECISIÓN: INCLUIR instant_bookable, cancellation_policy, city")
+print("   ❌ DECISIÓN: EXCLUIR zipcode")
+print("   💡 Justificación:")
+print("      • instant_bookable: Interacción binaria que dicta el comportamiento del mercado")
+print("      • cancellation_policy y city: Categorías amplias de impacto significativo probado")
+print("      • zipcode: Eliminada por altísima cardinalidad y redundancia con 'neighbourhood'")
+
+# Identificar variables dummy
 room_type_dummies = [col for col in df_limpio.columns if col.startswith('room_type_')]
+neighbourhood_dummies = [col for col in df_limpio.columns if col.startswith('neighbourhood_')]
+property_type_dummies = [col for col in df_limpio.columns if col.startswith('property_type_')]
+bed_type_dummies = [col for col in df_limpio.columns if col.startswith('bed_type_')]
+city_dummies = [col for col in df_limpio.columns if col.startswith('city_')]
+cancellation_policy_dummies = [col for col in df_limpio.columns if col.startswith('cancellation_policy_')]
 
 print(f"\n📋 Variables dummy de room_type identificadas: {len(room_type_dummies)}")
 for i, col in enumerate(room_type_dummies, 1):
     print(f"   {i}. {col}")
 
+print(f"\n📋 Variables dummy de neighbourhood identificadas: {len(neighbourhood_dummies)}")
+if len(neighbourhood_dummies) <= 10:
+    for i, col in enumerate(neighbourhood_dummies, 1):
+        print(f"   {i}. {col}")
+else:
+    print(f"   (Mostrando primeras 10 de {len(neighbourhood_dummies)})")
+    for i, col in enumerate(neighbourhood_dummies[:10], 1):
+        print(f"   {i}. {col}")
+    print(f"   ... y {len(neighbourhood_dummies) - 10} más")
+
+print(f"\n📋 Variables dummy de property_type identificadas: {len(property_type_dummies)}")
+if len(property_type_dummies) <= 10:
+    for i, col in enumerate(property_type_dummies, 1):
+        print(f"   {i}. {col}")
+else:
+    print(f"   (Mostrando primeras 10 de {len(property_type_dummies)})")
+    for i, col in enumerate(property_type_dummies[:10], 1):
+        print(f"   {i}. {col}")
+    print(f"   ... y {len(property_type_dummies) - 10} más")
+
+print(f"\n📋 Variables dummy de bed_type identificadas: {len(bed_type_dummies)}")
+if len(bed_type_dummies) <= 10:
+    for i, col in enumerate(bed_type_dummies, 1):
+        print(f"   {i}. {col}")
+else:
+    print(f"   (Mostrando primeras 10 de {len(bed_type_dummies)})")
+    for i, col in enumerate(bed_type_dummies[:10], 1):
+        print(f"   {i}. {col}")
+    print(f"   ... y {len(bed_type_dummies) - 10} más")
+
 # Definir variables finales para el modelo
-variables_independientes = ['accommodates', 'bedrooms'] + room_type_dummies
+variables_independientes = ['accommodates', 'bedrooms']
+if 'amenities_count' in df_limpio.columns:
+    variables_independientes.append('amenities_count')
+if 'cleaning_fee' in df_limpio.columns:
+    variables_independientes.append('cleaning_fee')
+if 'instant_bookable' in df_limpio.columns:
+    variables_independientes.append('instant_bookable')
+variables_independientes += room_type_dummies + neighbourhood_dummies + property_type_dummies + bed_type_dummies + city_dummies + cancellation_policy_dummies
 variable_dependiente = 'log_price'
 
 print(f"\n📊 CONFIGURACIÓN FINAL DEL MODELO:")
@@ -1271,16 +1422,24 @@ print("="*70)
 print(f"\n🎯 Variable Dependiente (Y):")
 print(f"   • {variable_dependiente}")
 
+vars_num = [v for v in variables_independientes if not v.startswith(('room_type_', 'neighbourhood_', 'property_type_', 'bed_type_', 'city_', 'cancellation_policy_'))]
 print(f"\n📊 Variables Independientes (X): {len(variables_independientes)}")
-print(f"\n   🔢 Numéricas continuas: 2")
-print(f"      1. accommodates")
-print(f"      2. bedrooms")
+print(f"\n   🔢 Numéricas continuas/discretas: {len(vars_num)}")
+for i, var in enumerate(vars_num, 1):
+    print(f"      {i}. {var}")
 
-print(f"\n   🏷️  Variables dummy (categóricas): {len(room_type_dummies)}")
-for i, col in enumerate(room_type_dummies, 1):
-    print(f"      {i}. {col}")
+print(f"\n   🏷️  Variables dummy (categóricas):")
+print(f"      • room_type: {len(room_type_dummies)} variables")
+print(f"      • neighbourhood: {len(neighbourhood_dummies)} variables")
+print(f"      • property_type: {len(property_type_dummies)} variables")
+print(f"      • bed_type: {len(bed_type_dummies)} variables")
+print(f"      • city: {len(city_dummies)} variables")
+print(f"      • cancellation_policy: {len(cancellation_policy_dummies)} variables")
+print(f"      • Total dummy: {len(room_type_dummies) + len(neighbourhood_dummies) + len(property_type_dummies) + len(bed_type_dummies) + len(city_dummies) + len(cancellation_policy_dummies)}")
 
-# ====================================================================
+print(f"\n   📊 Total de predictores: {len(variables_independientes)}")
+
+
 # ============================================
 # 5. DIVISIÓN EN CONJUNTOS DE ENTRENAMIENTO Y PRUEBA
 # ============================================
@@ -1376,11 +1535,11 @@ axes[1].grid(True, alpha=0.3)
 
 plt.tight_layout()
 guardar_grafico('11_distribucion_train_test.png')
-plt.show()
+plt.close()
 
 print("\n✅ División de datos completada exitosamente")
 
-# ====================================================================
+
 # ============================================
 # 6. CONSTRUCCIÓN Y ENTRENAMIENTO DEL MODELO
 # ============================================
@@ -1414,7 +1573,7 @@ coeficientes = pd.DataFrame({
 
 print(f"\n📈 Intercepto (β₀): {modelo.intercept_:.6f}")
 print(f"\n📊 Coeficientes de las variables (βᵢ):")
-display(coeficientes)
+print(coeficientes)
 
 # Interpretación de coeficientes
 print("\n💡 INTERPRETACIÓN DE COEFICIENTES:")
@@ -1428,29 +1587,94 @@ print("     en log_price respecto a la categoría de referencia")
 # Visualización de coeficientes
 plt.figure(figsize=(12, 8))
 
-colors = ['darkgreen' if x > 0 else 'darkred' for x in coeficientes['Coeficiente']]
-bars = plt.barh(coeficientes['Variable'], coeficientes['Coeficiente'], 
+# Tomar solo los top 25 coeficientes más impactantes para no saturar la gráfica
+top_coeficientes = coeficientes.head(25).sort_values('Coeficiente', ascending=True)
+
+colors = ['darkgreen' if x > 0 else 'darkred' for x in top_coeficientes['Coeficiente']]
+bars = plt.barh(top_coeficientes['Variable'], top_coeficientes['Coeficiente'], 
                 color=colors, alpha=0.7, edgecolor='black')
 
 plt.xlabel('Coeficiente (β)', fontsize=12, fontweight='bold')
 plt.ylabel('Variables', fontsize=12, fontweight='bold')
-plt.title('Coeficientes del Modelo de Regresión Lineal Múltiple\n' +
+plt.title('Top 25 Coeficientes del Modelo de Regresión Lineal Múltiple\n' +
           'Verde: Efecto positivo | Rojo: Efecto negativo',
           fontsize=13, fontweight='bold', pad=20)
 plt.axvline(x=0, color='black', linestyle='-', linewidth=1.5)
 plt.grid(True, alpha=0.3, axis='x')
 
 # Añadir valores en las barras
-for i, (bar, val) in enumerate(zip(bars, coeficientes['Coeficiente'])):
+for i, (bar, val) in enumerate(zip(bars, top_coeficientes['Coeficiente'])):
     plt.text(val + (0.01 if val > 0 else -0.01), i, f'{val:.4f}',
             va='center', ha='left' if val > 0 else 'right',
             fontsize=9, fontweight='bold')
 
 plt.tight_layout()
 guardar_grafico('12_coeficientes_modelo.png')
-plt.show()
+plt.close()
 
-# ====================================================================
+
+# ============================================
+# 6.1 ANÁLISIS DE SIGNIFICANCIA ESTADÍSTICA (P-VALUES)
+# ============================================
+
+print("\n" + "="*70)
+print("📈 ANÁLISIS DE SIGNIFICANCIA ESTADÍSTICA (P-VALUES)")
+print("="*70)
+
+import statsmodels.api as sm
+
+print("\n⏳ Calculando p-values con statsmodels para evaluar la significancia (esto puede tardar)...")
+X_train_sm = sm.add_constant(X_train)
+modelo_sm = sm.OLS(y_train, X_train_sm).fit()
+
+p_values = modelo_sm.pvalues
+vars_significativas = p_values[p_values < 0.05]
+vars_no_significativas = p_values[p_values >= 0.05]
+
+print(f"\n📊 Resultados de Significancia (Alpha = 0.05):")
+print(f"   • Total de predictores evaluados: {len(p_values) - 1}")
+print(f"   • Variables estadísticamente significativas (p < 0.05): {len(vars_significativas)} ({(len(vars_significativas)/(len(p_values)-1))*100:.1f}%)")
+print(f"   • Variables no significativas (p >= 0.05): {len(vars_no_significativas)}")
+
+print("\n🔝 Top 5 variables más significativas (p-value más cercano a 0):")
+print(p_values.sort_values().head(5))
+
+ruta_resumen = CARPETA_VIZ / '12b_resumen_estadistico_pvalues.txt'
+with open(ruta_resumen, 'w') as f:
+    f.write(modelo_sm.summary().as_text())
+print(f"\n💾 Resumen estadístico detallado guardado en: {ruta_resumen.name}")
+
+
+# ============================================
+# 6.2 REFINAMIENTO DEL MODELO (BACKWARD ELIMINATION)
+# ============================================
+
+print("\n" + "="*70)
+print("🧹 REFINAMIENTO DEL MODELO (BACKWARD ELIMINATION)")
+print("="*70)
+
+# Filtrar variables estadísticamente significativas (excluyendo la constante)
+vars_significativas_list = [var for var in vars_significativas.index if var != 'const']
+vars_eliminadas = [var for var in variables_independientes if var not in vars_significativas_list]
+
+print(f"\n🗑️  Variables eliminadas por no ser significativas (p >= 0.05): {len(vars_eliminadas)}")
+if len(vars_eliminadas) <= 15:
+    for var in vars_eliminadas:
+        print(f"   • {var}")
+else:
+    print(f"   • Se eliminaron {len(vars_eliminadas)} dummies sin significancia estadística.")
+
+# Actualizar variables y datasets
+variables_independientes = vars_significativas_list
+X_train = X_train[variables_independientes]
+X_test = X_test[variables_independientes]
+
+print(f"\n🔄 Reentrenando modelo final solo con variables significativas ({len(variables_independientes)} predictores)...")
+modelo = LinearRegression()
+modelo.fit(X_train, y_train)
+print("✅ Modelo final optimizado exitosamente")
+
+
 # ============================================
 # 7. EVALUACIÓN DEL MODELO
 # ============================================
@@ -1476,6 +1700,12 @@ r2_test = r2_score(y_test, y_test_pred)
 mse_test = mean_squared_error(y_test, y_test_pred)
 rmse_test = np.sqrt(mse_test)
 mae_test = mean_absolute_error(y_test, y_test_pred)
+
+# Actualizar tabla de coeficientes para el JSON
+coeficientes = pd.DataFrame({
+    'Variable': variables_independientes,
+    'Coeficiente': modelo.coef_
+}).sort_values('Coeficiente', key=abs, ascending=False)
 
 print("\n📊 MÉTRICAS DE RENDIMIENTO:")
 print("="*70)
@@ -1536,9 +1766,9 @@ metricas_comparacion = pd.DataFrame({
 })
 
 print("\n📋 TABLA COMPARATIVA DE MÉTRICAS:")
-display(metricas_comparacion)
+print(metricas_comparacion)
 
-# ====================================================================
+
 # ============================================
 # 8. PREDICCIONES Y COMPARACIÓN
 # ============================================
@@ -1557,7 +1787,7 @@ resultados = pd.DataFrame({
 })
 
 print("\n📊 PRIMERAS 10 PREDICCIONES:")
-display(resultados.head(10))
+print(resultados.head(10))
 
 print("\n📊 ESTADÍSTICAS DE LOS ERRORES:")
 print("="*70)
@@ -1607,11 +1837,11 @@ axes[1, 1].grid(True, alpha=0.3)
 
 plt.tight_layout()
 guardar_grafico('13_analisis_predicciones.png', dpi=300)
-plt.show()
+plt.close()
 
 print("\n✅ Análisis de predicciones completado")
 
-# ====================================================================
+
 # ============================================
 # 9. CÁLCULO DEL ERROR CUADRÁTICO MEDIO (MSE)
 # ============================================
@@ -1675,9 +1905,9 @@ for bars in [bars1, bars2]:
 
 plt.tight_layout()
 guardar_grafico('14_metricas_error_comparacion.png')
-plt.show()
+plt.close()
 
-# ====================================================================
+
 # ============================================
 # RESUMEN FINAL DEL MODELO
 # ============================================
@@ -1714,3 +1944,110 @@ print("="*70)
 - el modelo entrenado explica el 44% de la variancia sirve para generar 
 
 """
+
+
+# ============================================
+# EXPORTACIÓN DE MÉTRICAS A JSON
+# ============================================
+
+print("\n" + "="*70)
+print("💾 EXPORTACIÓN DE MÉTRICAS A JSON")
+print("="*70)
+
+# Crear diccionario con todas las métricas
+metricas_completas = {
+    "dataset": {
+        "original": {
+            "filas": int(df.shape[0]),
+            "columnas": int(df.shape[1]),
+            "valores_faltantes": int(df.isnull().sum().sum())
+        },
+        "limpio": {
+            "filas": int(df_limpio.shape[0]),
+            "columnas": int(df_limpio.shape[1]),
+            "valores_faltantes": int(df_limpio.isnull().sum().sum()),
+            "porcentaje_retenido": round((df_limpio.shape[0] / df.shape[0]) * 100, 2)
+        }
+    },
+    "correlaciones": {
+        var: round(float(correlaciones_precio.get(var, 0)), 4)
+        for var in ['accommodates', 'bedrooms', 'bathrooms', 'amenities_count', 'cleaning_fee']
+        if var in correlaciones_precio.index
+    },
+    "train_test_split": {
+        "train": {
+            "n_observaciones": int(len(X_train)),
+            "porcentaje": 80,
+            "media_log_price": round(float(y_train.mean()), 4),
+            "mediana_log_price": round(float(y_train.median()), 4),
+            "std_log_price": round(float(y_train.std()), 4)
+        },
+        "test": {
+            "n_observaciones": int(len(X_test)),
+            "porcentaje": 20,
+            "media_log_price": round(float(y_test.mean()), 4),
+            "mediana_log_price": round(float(y_test.median()), 4),
+            "std_log_price": round(float(y_test.std()), 4)
+        }
+    },
+    "modelo": {
+        "tipo": "Regresión Lineal Múltiple",
+        "metodo": "OLS (Ordinary Least Squares)",
+        "n_variables": len(variables_independientes),
+        "intercepto": round(float(modelo.intercept_), 6),
+        "coeficientes": {
+            var: round(float(coef), 6) 
+            for var, coef in zip(variables_independientes, modelo.coef_)
+        }
+    },
+    "metricas": {
+        "entrenamiento": {
+            "r2": round(float(r2_train), 6),
+            "mse": round(float(mse_train), 6),
+            "rmse": round(float(rmse_train), 6),
+            "mae": round(float(mae_train), 6)
+        },
+        "prueba": {
+            "r2": round(float(r2_test), 6),
+            "mse": round(float(mse_test), 6),
+            "rmse": round(float(rmse_test), 6),
+            "mae": round(float(mae_test), 6)
+        },
+        "diferencia_r2": round(float(abs(r2_train - r2_test)), 6)
+    },
+    "errores": {
+        "error_medio": round(float(resultados['Error'].mean()), 6),
+        "error_absoluto_medio": round(float(resultados['Error_Absoluto'].mean()), 6),
+        "error_porcentual_medio": round(float(resultados['Error_Porcentual'].mean()), 2),
+        "error_maximo": round(float(resultados['Error_Absoluto'].max()), 6),
+        "error_minimo": round(float(resultados['Error_Absoluto'].min()), 6)
+    }
+}
+
+# Guardar en JSON
+import json
+output_path = DIRECTORIO_BASE / 'Presentacion' / 'metricas_modelo.json'
+with open(output_path, 'w', encoding='utf-8') as f:
+    json.dump(metricas_completas, f, indent=2, ensure_ascii=False)
+
+print(f"\n✅ Métricas guardadas en: {output_path}")
+print(f"\n📊 Resumen:")
+print(f"   Dataset limpio: {metricas_completas['dataset']['limpio']['filas']:,} filas")
+print(f"   R² (prueba): {metricas_completas['metricas']['prueba']['r2']:.4f}")
+print(f"   MSE (prueba): {metricas_completas['metricas']['prueba']['mse']:.6f}")
+print(f"   RMSE (prueba): {metricas_completas['metricas']['prueba']['rmse']:.6f}")
+
+# Mostrar correlaciones
+print(f"\n📊 Correlaciones con log_price:")
+for var, corr in metricas_completas['correlaciones'].items():
+    print(f"   {var}: {corr:+.4f}")
+
+# Mostrar top 3 coeficientes
+print(f"\n🔝 Top 3 coeficientes (valor absoluto):")
+coefs_sorted = sorted(metricas_completas['modelo']['coeficientes'].items(), 
+                      key=lambda x: abs(x[1]), reverse=True)
+for i, (var, coef) in enumerate(coefs_sorted[:3], 1):
+    print(f"   {i}. {var}: {coef:.6f}")
+
+print("\n✅ EXPORTACIÓN COMPLETADA")
+print("="*70)

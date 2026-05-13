@@ -1,0 +1,51 @@
+# Archivos temporales generados por LaTeX
+*.aux
+*.bbl
+*.blg
+*.brf
+*.fdb_latexmk
+*.fls
+*.idx
+*.ilg
+*.ind
+*.lof
+*.log
+*.lot
+*.nav
+*.out
+*.snm
+*.synctex.gz
+*.toc
+*.vrb
+
+# Nota: Descomenta la siguiente línea si tampoco deseas incluir los PDF compilados
+# *.pdf
+
+# ==========================================
+# Archivos de Python
+# ==========================================
+# Caché de bytecodes
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Entornos virtuales
+.venv/
+venv/
+env/
+ENV/
+
+# Variables de entorno y configuraciones locales
+.env
+.pytest_cache/
+.DS_Store
+
+# ==========================================
+# Archivos de macOS
+# ==========================================
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
