@@ -116,8 +116,8 @@
       \begin{itemize}
         \item[\alert{$\times$}] \texttt{beds} \\
         VIF = 14.89 (crítico)
-        \item[\alert{$\times$}] \texttt{bathrooms} \\
-        Correlación = 0.155 (débil)
+        \item[\alert{$\times$}] \texttt{bathrooms, bedrooms} \\
+        Colinealidad moderada y ruido
         \item[\alert{$\times$}] \texttt{zipcode} \\
         Redundante y de altísima cardinalidad
       \end{itemize}
@@ -125,8 +125,8 @@
     \column{.5\textwidth}
       \textbf{Variables INCLUIDAS:}
       \begin{itemize}
-        \item[\textcolor{green}{$\checkmark$}] \texttt{accommodates, bedrooms} \\
-        Predictores principales
+        \item[\textcolor{green}{$\checkmark$}] \texttt{accommodates} \\
+        Predictor principal
         \item[\textcolor{green}{$\checkmark$}] \texttt{amenities\_count, cleaning\_fee, instant\_bookable} \\
         Nuevas variables añadidas
         \item[\textcolor{green}{$\checkmark$}] \texttt{room\_type, property\_type, bed\_type, city, cancellation\_policy} \\
@@ -161,8 +161,8 @@
   
   \begin{itemize}
     \item \textbf{accommodates:} +0.522 (predictor principal)
-    \item \textbf{bedrooms:} +0.293 (moderada)
-    \item \textbf{bathrooms:} +0.155 (débil - excluida)
+    \item \textbf{bedrooms:} +0.293 (excluida por colinealidad)
+    \item \textbf{bathrooms:} +0.155 (excluida por colinealidad)
   \end{itemize}
 \end{frame}
 
@@ -210,7 +210,7 @@
   
   \begin{block}{Ecuación del Modelo}
     \begin{equation*}
-      \text{log\_price} = \beta_0 + \beta_1 \cdot \text{acc} + \beta_2 \cdot \text{bedr} + \beta_3 \cdot \text{amen} + \beta_4 \cdot \text{clean} + \sum \text{dummies}
+      \text{log\_price} = \beta_0 + \beta_1 \cdot \text{acc} + \beta_2 \cdot \text{amen} + \beta_3 \cdot \text{clean} + \sum \text{dummies}
     \end{equation*}
   \end{block}
   
@@ -224,7 +224,7 @@
   
   \begin{itemize}
     \item \textbf{Método:} OLS (Ordinary Least Squares)
-    \item \textbf{Variables:} 4 numéricas + room\_type + property\_type + bed\_type + neighbourhood = >650 predictores
+    \item \textbf{Variables:} 3 numéricas + room\_type + property\_type + bed\_type + neighbourhood = >650 predictores
     \item \textbf{Observaciones:} 53,401 (entrenamiento)
   \end{itemize}
 \end{frame}

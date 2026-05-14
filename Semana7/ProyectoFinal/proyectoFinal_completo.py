@@ -753,15 +753,23 @@ print("="*70)
 # Variable 1: beds
 print("\n1️⃣  VARIABLE: beds")
 print("   ❌ DECISIÓN: ELIMINAR")
-print("   📊 VIF: 14.89 (crítico)")
-print("   🔗 Correlación con accommodates: 0.76")
-print("   💡 Justificación:")
-print("      • Redundancia estructural con accommodates")
-print("      • VIF en nivel crítico (>10)")
-print("      • accommodates tiene mayor correlación con log_price (0.52)")
+print("   📊 VIF: > 14 (crítico)")
+print("   💡 Justificación: Redundancia estructural con accommodates (VIF > 10).")
 
-# Variable 2: accommodates
-print("\n2️⃣  VARIABLE: accommodates")
+# Variable 2: bedrooms
+print("\n2️⃣  VARIABLE: bedrooms")
+print("   ❌ DECISIÓN: ELIMINAR")
+print("   📊 VIF: ~ 7.0 (moderado)")
+print("   💡 Justificación: Colinealidad con accommodates y aporta menos información al modelo.")
+
+# Variable 3: bathrooms
+print("\n3️⃣  VARIABLE: bathrooms")
+print("   ❌ DECISIÓN: ELIMINAR")
+print("   📊 VIF: ~ 7.5 (moderado)")
+print("   💡 Justificación: Aumenta la inflación de la varianza y su correlación con log_price es débil.")
+
+# Variable 4: accommodates
+print("\n4️⃣  VARIABLE: accommodates")
 print("   ✅ DECISIÓN: RETENER")
 print("   📊 Correlación con log_price: 0.52 (la más alta)")
 print("   💡 Justificación:")
@@ -775,7 +783,7 @@ print(f"   Filas: {df_limpio.shape[0]:,}")
 print(f"   Columnas: {df_limpio.shape[1]}")
 
 # Eliminar variables con multicolinealidad crítica
-variables_eliminar_vif = ['beds']
+variables_eliminar_vif = ['beds', 'bedrooms', 'bathrooms']
 variables_existentes = [col for col in variables_eliminar_vif if col in df_limpio.columns]
 
 if variables_existentes:
@@ -875,7 +883,7 @@ if len(vars_numericas_remanentes) >= 2:
     ax1.axvline(x=10, color='red', linestyle='--', linewidth=2, label='VIF = 10')
     ax1.set_xlabel('VIF', fontsize=12)
     ax1.set_ylabel('Variables', fontsize=12)
-    ax1.set_title('VIF - Segunda Iteración\n(Después de eliminar beds)', 
+    ax1.set_title('VIF - Segunda Iteración\n(Después de eliminar beds, bedrooms y bathrooms)', 
                   fontsize=12, pad=15)
     ax1.legend()
     ax1.grid(True, alpha=0.3, axis='x')
@@ -1084,7 +1092,7 @@ print("   ✅ Transparencia (alpha): Maneja overplotting en datasets grandes")
 
 # Seleccionar variables numéricas para el pairplot
 # Excluir variables dummy (que empiezan con 'room_type_', 'property_type_', etc.)
-variables_pairplot = ['log_price', 'accommodates', 'bathrooms', 'bedrooms', 'amenities_count', 'cleaning_fee']
+variables_pairplot = ['log_price', 'accommodates', 'amenities_count', 'cleaning_fee']
 
 # Verificar que todas las variables existen
 variables_disponibles = [var for var in variables_pairplot if var in df_limpio.columns]
@@ -1329,16 +1337,9 @@ print("   ✅ DECISIÓN: INCLUIR")
 print("   📊 Correlación con log_price: 0.5201")
 print("   💡 Justificación: Predictor principal - mayor correlación positiva")
 
-print("\n2️⃣  VARIABLE: bedrooms")
-print("   ⚠️  DECISIÓN: EVALUAR")
-print("   📊 Correlación con log_price: (a verificar)")
-print("   🔗 Correlación con accommodates: 0.532")
-print("   💡 Justificación: Colinealidad moderada con accommodates")
-
-print("\n3️⃣  VARIABLE: bathrooms")
+print("\n2️⃣  VARIABLES: bedrooms, bathrooms")
 print("   ❌ DECISIÓN: EXCLUIR")
-print("   📊 Correlación con log_price: 0.1478")
-print("   💡 Justificación: Baja significancia lineal (<0.2)")
+print("   💡 Justificación: Eliminadas en el análisis VIF por multicolinealidad.")
 
 print("\n4️⃣  VARIABLES ELIMINADAS PREVIAMENTE:")
 print("   ❌ number_of_reviews, review_scores_rating: Eliminadas de candidatas")
@@ -1407,7 +1408,7 @@ else:
     print(f"   ... y {len(bed_type_dummies) - 10} más")
 
 # Definir variables finales para el modelo
-variables_independientes = ['accommodates', 'bedrooms']
+variables_independientes = ['accommodates']
 if 'amenities_count' in df_limpio.columns:
     variables_independientes.append('amenities_count')
 if 'cleaning_fee' in df_limpio.columns:
@@ -1439,6 +1440,45 @@ print(f"      • Total dummy: {len(room_type_dummies) + len(neighbourhood_dummi
 
 print(f"\n   📊 Total de predictores: {len(variables_independientes)}")
 
+
+# ============================================
+# 4.2 ANÁLISIS DE VIF POST-DUMMIES
+# ============================================
+
+print("\n" + "="*70)
+print("📊 ANÁLISIS DE MULTICOLINEALIDAD (VIF) POST-DUMMIES")
+print("="*70)
+
+print(f"\n⏳ Calculando VIF para {len(variables_independientes)} predictores finales...")
+print("   (⚠️ Esto puede tardar varios minutos debido a la alta dimensionalidad)")
+
+# Preparar datos para VIF final
+df_vif_final = df_limpio[variables_independientes].dropna()
+
+# Calcular VIF
+vif_final_data = pd.DataFrame()
+vif_final_data["Variable"] = df_vif_final.columns
+vif_final_data["VIF"] = [variance_inflation_factor(df_vif_final.values, i) for i in range(len(df_vif_final.columns))]
+
+# Ordenar resultados
+vif_final_data = vif_final_data.sort_values('VIF', ascending=False).reset_index(drop=True)
+
+print("\n📋 RESULTADOS - VIF POST-DUMMIES (Top 20 VIF más altos):")
+print("="*70)
+print(vif_final_data.head(20))
+
+vif_criticos_final = len(vif_final_data[vif_final_data['VIF'] > 10])
+vif_moderados_final = len(vif_final_data[(vif_final_data['VIF'] >= 5) & (vif_final_data['VIF'] <= 10)])
+
+print(f"\n📊 RESUMEN POST-DUMMIES:")
+print(f"   ❌ VIF Crítico (> 10): {vif_criticos_final} variables")
+print(f"   ⚠️  VIF Moderado (5-10): {vif_moderados_final} variables")
+print(f"   ✅ VIF Aceptable (< 5): {len(vif_final_data) - vif_criticos_final - vif_moderados_final} variables")
+
+# Exportar resultados a CSV para análisis detallado
+ruta_vif_final = CARPETA_VIZ / '06b_vif_post_dummies.csv'
+vif_final_data.to_csv(ruta_vif_final, index=False)
+print(f"\n💾 Informe VIF completo exportado a: {ruta_vif_final.name}")
 
 # ============================================
 # 5. DIVISIÓN EN CONJUNTOS DE ENTRENAMIENTO Y PRUEBA
